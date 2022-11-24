@@ -17,21 +17,21 @@ include("geninstance.jl");
 
 let
 ##
-    instance      = "LosAngeles";
-    horizon       = 30          ;
-    share         = 0.007695    ;
-    consolidation = 3           ;
-    dynamism      = 0.2         ;
-##
+    instance      = "LosAngeles"
+    horizon       = 30          
+    share         = 0.007695    
+    consolidation = 3           
+    dynamism      = 0.2         
+##;
 ##  Strategic decision-making 
     println("STRATEGIC DECISION-MAKING")
-    rng = MersenneTwister(horizon)                                      ;
-    genstr(instance, share)                                             ;
-    strategic = optstr(rng, instance)                                   ;
-    s = deepcopy(strategic)                                             ;
+    rng       = MersenneTwister(horizon)
+    genstr(instance, share)
+    strategic = optstr(rng, instance)
+    s         = deepcopy(strategic)
     println("Distribution structure")
     println("   First echelon")
-    i = 0                                                               ;
+    i = 0
     for d ∈ s.D
         if isequal(d.jⁿ, 2) continue end
         if !LRP.isopt(d) continue end
@@ -41,7 +41,7 @@ let
         println("           Fleet-size  : $(sum((LRP.isopt).(d.V)))")
     end
     println("   Second echelon")
-    i = 0                                                               ;
+    i = 0
     for d ∈ s.D
         if isequal(d.jⁿ, 1) continue end
         if !LRP.isopt(d) continue end
@@ -51,21 +51,20 @@ let
         println("           Fleet-size  : $(sum((LRP.isopt).(d.V)))")
     end
     display(visualize(s))
-    save("instances/$instance/#1. strategic/solution.jld", "s", s)      ;
-
-##
+    save("instances/$instance/#1. strategic/solution.jld", "s", s)
+##;
 ##  Simulate daily operations
     for day ∈ 1:horizon
         println("\nday $day")
         # Step 2.1. Tactical decision-making
         println("TACTICAL DECISION-MAKING")
-        rng = MersenneTwister(day)
+        rng      = MersenneTwister(day)
         gentac(rng, instance, share, consolidation, dynamism, day, strategic)
         tactical = opttac(rng, instance, day)
-        s  = deepcopy(tactical)
-        πᶠ = f(s; operational=false, penalty=false)/length(s.C)
-        πᵒ = f(s; fixed=false, penalty=false)/length(s.C)
-        πᵗ = f(s; penalty=false)/length(s.C)
+        s        = deepcopy(tactical)
+        πᶠ       = f(s; operational=false, penalty=false)/length(s.C)
+        πᵒ       = f(s; fixed=false, penalty=false)/length(s.C)
+        πᵗ       = f(s; penalty=false)/length(s.C)
         println("Distribution cost per package")
         println("   Fixed       : $(round(πᶠ, digits=3))")
         println("   Operational : $(round(πᵒ, digits=3))")
@@ -75,13 +74,13 @@ let
 
         # Step 2.3. Operational decision-making
         println("OPERATIONAL DECISION-MAKING")
-        rng = MersenneTwister(day)
+        rng         = MersenneTwister(day)
         genopt(rng, instance, share, consolidation, dynamism, day, strategic)
         operational = optopr(rng, instance, day, tactical)
-        s   = deepcopy(operational)
-        πᶠ = f(s; operational=false, penalty=false)/length(s.C)
-        πᵒ = f(s; fixed=false, penalty=false)/length(s.C)
-        πᵗ = f(s; penalty=false)/length(s.C)
+        s           = deepcopy(operational)
+        πᶠ          = f(s; operational=false, penalty=false)/length(s.C)
+        πᵒ          = f(s; fixed=false, penalty=false)/length(s.C)
+        πᵗ          = f(s; penalty=false)/length(s.C)
         println("Distribution cost per package")
         println("   Fixed       : $(round(πᶠ, digits=3))")
         println("   Operational : $(round(πᵒ, digits=3))")
@@ -89,5 +88,5 @@ let
         display(visualize(s))
         save("instances/$instance/#3. operational/day $day/solution.jld", "s", s)
     end
-##
+##;
 end
