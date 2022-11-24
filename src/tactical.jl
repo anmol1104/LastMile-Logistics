@@ -2,25 +2,32 @@
 function opttac(rng::AbstractRNG, instance::String, day::Int64)
     # Step 1. Visualize instance
     instance = "$instance/#2. tactical/day $day"
-    dir      = "G:/My Drive/Academia/Research related/Projects/2022. Dissertation/Analysis/instances"
+    dir      = "G:/My Drive/Academia/Research/Projects/2022. Last-Mile Logistics/Analysis/instances"
     display(visualize(instance; root=dir))
     
     # Step 2. Build operational solution
     G  = build(instance; root=dir)
     s  = initialsolution(rng, G, :cluster)
+    
     n  = 50
     χ  = ALNSParameters(
-        k̲    =   n ÷ 25                  ,
-        l̲    =   2n                      ,
-        l̅    =   5n                      ,
-        k̅    =   10n                     ,
+        n    =   n ÷ 25                  ,
+        k    =   250                     ,
+        m    =   2n                      ,
+        j    =   125                     ,
         Ψᵣ   =   [
                     :randomnode!    ,
                     :randomroute!   ,
+                    :randomvehicle! ,
+                    :randomdepot!   ,
                     :relatednode!   ,
                     :relatedroute!  ,
+                    :relatedvehicle!,
+                    :relateddepot!  ,
                     :worstnode!     ,
                     :worstroute!    ,
+                    :worstvehicle!  ,
+                    :worstdepot!
                 ]                        ,
         Ψᵢ   =  [
                     :bestprecise!   ,
@@ -29,12 +36,14 @@ function opttac(rng::AbstractRNG, instance::String, day::Int64)
                     :greedyperturb! ,
                     :regret2!       ,
                     :regret3!
-                ]                           ,
-        Ψₗ   =  [
-                    :move!          ,
-                    :opt!           ,
-                    :split!         ,
-                    :swapcustomers! ,
+                ]                        ,
+        Ψₗ  =   [
+                    :intraopt!       ,
+                    :interopt!       ,
+                    :movecustomer!   ,
+                    :movedepot!      ,
+                    :swapcustomers!  ,
+                    :swapdepots!
                 ]                        ,
         σ₁   =   15                      ,
         σ₂   =   10                      ,
@@ -50,7 +59,7 @@ function opttac(rng::AbstractRNG, instance::String, day::Int64)
     )
     S = ALNS(rng, χ, s)
     s = deepcopy(S[end])
-
+    
     # Step 3. Return solution
     return s
 end
