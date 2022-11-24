@@ -4,7 +4,7 @@ include("localsearch.jl")
 # Operational decision-making
 function optopr(rng::AbstractRNG, instance::String, day::Int64, tactical::LRP.Solution)
     instance = "$instance/#3. operational/day $day"
-    dir      = "G:/My Drive/Academia/Research related/Projects/2022. Dissertation/Analysis/instances"
+    dir      = "G:/My Drive/Academia/Research/Projects/2022. Last-Mile Logistics/Analysis/instances"
     file     = joinpath(dir, "$instance/customer_nodes.csv")
     csv      = CSV.File(file, types=[Int64, Float64, Float64, Int64, Float64, Float64, Float64])
     df       = DataFrame(csv)
