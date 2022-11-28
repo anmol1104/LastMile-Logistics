@@ -1,7 +1,7 @@
 # Tactical decision-making
-function opttac(rng::AbstractRNG, instance::String, day::Int64)
+function opttac(rng::AbstractRNG, instance::String, version::String, day::Int64)
     # Step 1. Visualize instance
-    instance = "$instance/#2. tactical/day $day"
+    instance = "$instance/#2. tactical - $version/day $day"
     dir      = "G:/My Drive/Academia/Research/Projects/2022. Last-Mile Logistics/Analysis/instances"
     display(visualize(instance; root=dir))
     
