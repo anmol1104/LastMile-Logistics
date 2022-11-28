@@ -6,7 +6,7 @@ function optopr(rng::AbstractRNG, instance::String, day::Int64, tactical::LRP.So
     instance = "$instance/#3. operational/day $day"
     dir      = "G:/My Drive/Academia/Research/Projects/2022. Last-Mile Logistics/Analysis/instances"
     file     = joinpath(dir, "$instance/customer_nodes.csv")
-    csv      = CSV.File(file, types=[Int64, Float64, Float64, Int64, Float64, Float64, Float64])
+    csv      = CSV.File(file, types=[Int64, Float64, Float64, Float64, Float64, Float64, Float64])
     df       = DataFrame(csv)
     Iⁿ       = (df[1,1]:df[nrow(df),1])::UnitRange{Int64}
     Tʳ       = Dict{Int64, Float64}(iⁿ => 0. for iⁿ ∈ Iⁿ)
@@ -15,7 +15,7 @@ function optopr(rng::AbstractRNG, instance::String, day::Int64, tactical::LRP.So
         iⁿ = df[k,1]::Int64
         x  = df[k,2]::Float64
         y  = df[k,3]::Float64
-        q  = df[k,4]::Int64
+        q  = df[k,4]::Float64
         tᵉ = df[k,5]::Float64
         tˡ = df[k,6]::Float64
         tʳ = df[k,7]::Float64
@@ -61,6 +61,7 @@ function optopr(rng::AbstractRNG, instance::String, day::Int64, tactical::LRP.So
         for d ∈ s.D
             for v ∈ d.V
                 for r ∈ v.R
+                    if !LRP.isopt(r) continue end
                     if !LRP.isactive(r) continue end 
                     tᶜ = d.tˢ + floor((r.tⁱ + r.τ - d.tˢ)/τ) * τ
                     if isequal(tᶜ, t)
