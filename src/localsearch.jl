@@ -248,6 +248,7 @@ function split!(rng::AbstractRNG, k̅::Int64, s::LRP.Solution)
         # Step 1.1: Select a random depot node d and a route originiating from this depot node
         d = sample(rng, D)
         R = [r for v ∈ d.V for r ∈ v.R]
+        if isempty(R) continue end
         r = sample(rng, R)
         if !LRP.isopt(r) continue end
         if !LRP.isactive(r) continue end
