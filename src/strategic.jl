@@ -9,7 +9,7 @@ function optstr(rng::AbstractRNG, instance::String)
     G  = build(instance; root=dir)
     s  = initialsolution(rng, G, :cluster)
 
-    n  = 200
+    n  = 100
     χ  = ALNSParameters(
         n    =   n ÷ 25                  ,
         k    =   250                     ,
