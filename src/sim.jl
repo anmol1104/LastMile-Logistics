@@ -7,6 +7,7 @@ using Revise
 using StatsBase
 using DataFrames
 using OffsetArrays
+using ProgressMeter
 using Distributions
 using ElasticArrays
 
