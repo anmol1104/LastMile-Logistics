@@ -8,55 +8,7 @@ function genstr(instance::String, share::Float64)
     # Customer Nodes
     df₁ = DataFrame(CSV.File("instances/$instance/depot nodes.csv"))
     df₂ = DataFrame(CSV.File("instances/$instance/census tracts.csv"))
-    CSV.write("instances/$instance/#1. strategic/customer_nodes.csv", DataFrame(in = (1+nrow(df₁)):(nrow(df₁)+nrow(df₂)), x = df₂[:,4], y = df₂[:,5], q = df₂[:,8] * share, te = df₂[:,6], tl = df₂[:,7]))
-    
-    # Arcs
-    df₁ = DataFrame(CSV.File("instances/$instance/#1. strategic/depot_nodes.csv"))
-    df₂ = DataFrame(CSV.File("instances/$instance/#1. strategic/customer_nodes.csv"))
-    A   = DataFrame(t = Int64[], h = Int64[], l = Float64[], φ = Float64[])
-    for i ∈ 1:nrow(df₁)
-        iⁿ = df₁[i,1]
-        x₁ = df₁[i,3]
-        y₁ = df₁[i,4] 
-        for j ∈ 1:nrow(df₁)
-            jⁿ = df₁[j,1]
-            x₂ = df₁[j,3]
-            y₂ = df₁[j,4]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 55/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-        for j ∈ 1:nrow(df₂)
-            jⁿ = df₂[j,1]
-            x₂ = df₂[j,2]
-            y₂ = df₂[j,3]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 55/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-    end
-    for i ∈ 1:nrow(df₂)
-        iⁿ = df₂[i,1]
-        x₁ = df₂[i,2]
-        y₁ = df₂[i,3] 
-        for j ∈ 1:nrow(df₁)
-            jⁿ = df₁[j,1]
-            x₂ = df₁[j,3]
-            y₂ = df₁[j,4]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 55/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-        for j ∈ 1:nrow(df₂)
-            jⁿ = df₂[j,1]
-            x₂ = df₂[j,2]
-            y₂ = df₂[j,3]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 20/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-    end
-    CSV.write("instances/$instance/#1. strategic/arcs.csv", A)
+    CSV.write("instances/$instance/#1. strategic/customer_nodes.csv", DataFrame(in = (1+nrow(df₁)):(nrow(df₁)+nrow(df₂)), x = df₂[:,2], y = df₂[:,3], q = df₂[:,4] * share, te = df₂[:,5], tl = df₂[:,6]))
 
     # Vehicles
     CSV.write("instances/$instance/#1. strategic/vehicles.csv", DataFrame(CSV.File("instances/$instance/vehicles.csv")))    
@@ -74,12 +26,12 @@ function gentac(rng::AbstractRNG, instance::String, version::String, share::Floa
     s = strategic
 
     # Depot Nodes
-    Dˢ = DataFrame(in = Int64[], jn = Int64[], x = Float64[], y = Float64[], q = Float64[], pl = Float64[], pu = Float64[], ts = Float64[], te = Float64[], co = Float64[], cf = Float64[])
+    Dˢ = DataFrame(in = Int64[], jn = Int64[], x = Float64[], y = Float64[], q = Float64[], pl = Float64[], pu = Float64[], ts = Float64[], te = Float64[], co = Float64[], cf = Float64[], phi = Int64[])
     iᵈ = 0
     for d ∈ s.D
         if !LRP.isopt(d) continue end
         iᵈ += 1
-        push!(Dˢ, (iᵈ, d.jⁿ, d.x, d.y, d.q, d.pˡ, d.pᵘ, d.tˢ, d.tᵉ, d.πᵒ, d.πᶠ))
+        push!(Dˢ, (iᵈ, d.jⁿ, d.x, d.y, d.q, d.pˡ, d.pᵘ, d.tˢ, d.tᵉ, d.πᵒ, d.πᶠ, 1))
     end
     CSV.write("instances/$instance/#2. tactical - $version/day $h/depot_nodes.csv", Dˢ)
  
@@ -97,8 +49,8 @@ function gentac(rng::AbstractRNG, instance::String, version::String, share::Floa
     nˢ = 0
     nᵈ = 0
     δʰ = δ
-    Z  = Dict(df[r,6] => Int64[] for r ∈ 1:n)
-    for r ∈ 1:n push!(Z[df[r,6]], df[r,1]) end
+    Z  = Dict(df[r,7] => Int64[] for r ∈ 1:n)
+    for r ∈ 1:n push!(Z[df[r,7]], df[r,1]) end
     for iᵗ ∈ keys(Z)
         zᶜ = Int64(round(length(Z[iᵗ]) * rand(rng, Uniform(0.8p, 1.2p)) / θ))
         zˢ = Int64(round((1 - δʰ) * zᶜ))
@@ -107,12 +59,12 @@ function gentac(rng::AbstractRNG, instance::String, version::String, share::Floa
         Iˢ = sample(rng, Iᶜ, zˢ, replace=false)
         Iᵈ = filter(x -> x ∉ Iˢ, Iᶜ)
         for iˢ ∈ Iˢ 
-            push!(Cᶜ, (df[iˢ,1], df[iˢ,2], df[iˢ,3], θ, df[iˢ,4], df[iˢ,5])) 
-            push!(Cˢ, (df[iˢ,1], df[iˢ,2], df[iˢ,3], θ, df[iˢ,4], df[iˢ,5])) 
+            push!(Cᶜ, (df[iˢ,1], df[iˢ,2], df[iˢ,3], θ, df[iˢ,5], df[iˢ,6])) 
+            push!(Cˢ, (df[iˢ,1], df[iˢ,2], df[iˢ,3], θ, df[iˢ,5], df[iˢ,6])) 
         end
         for iᵈ ∈ Iᵈ 
             rand(rng, Uniform(tˢ, tˢ + (tᵉ - tˢ)/2))
-            push!(Cᶜ, (df[iᵈ,1], df[iᵈ,2], df[iᵈ,3], θ, df[iᵈ,4], df[iᵈ,5]))
+            push!(Cᶜ, (df[iᵈ,1], df[iᵈ,2], df[iᵈ,3], θ, df[iᵈ,5], df[iᵈ,6]))
         end
         nᶜ += zᶜ
         nˢ += zˢ
@@ -123,54 +75,6 @@ function gentac(rng::AbstractRNG, instance::String, version::String, share::Floa
     for n ∈ 1:nˢ Cˢ[n,1] = n + Δn end
     Cᵒ = isequal(version, "counterfactual") ? Cᶜ : Cˢ
     CSV.write("instances/$instance/#2. tactical - $version/day $h/customer_nodes.csv", Cᵒ)
-
-    # Arcs
-    df₁ = DataFrame(CSV.File("instances/$instance/#2. tactical - $version/day $h/depot_nodes.csv"))
-    df₂ = DataFrame(CSV.File("instances/$instance/#2. tactical - $version/day $h/customer_nodes.csv"))
-    A   = DataFrame(t = Int64[], h = Int64[], l = Float64[], φ = Float64[])
-    for i ∈ 1:nrow(df₁)
-        iⁿ = df₁[i,1]
-        x₁ = df₁[i,3]
-        y₁ = df₁[i,4] 
-        for j ∈ 1:nrow(df₁)
-            jⁿ = df₁[j,1]
-            x₂ = df₁[j,3]
-            y₂ = df₁[j,4]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 55/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-        for j ∈ 1:nrow(df₂)
-            jⁿ = df₂[j,1]
-            x₂ = df₂[j,2]
-            y₂ = df₂[j,3]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 55/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-    end
-    for i ∈ 1:nrow(df₂)
-        iⁿ = df₂[i,1]
-        x₁ = df₂[i,2]
-        y₁ = df₂[i,3] 
-        for j ∈ 1:nrow(df₁)
-            jⁿ = df₁[j,1]
-            x₂ = df₁[j,3]
-            y₂ = df₁[j,4]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 55/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-        for j ∈ 1:nrow(df₂)
-            jⁿ = df₂[j,1]
-            x₂ = df₂[j,2]
-            y₂ = df₂[j,3]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 20/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-    end
-    CSV.write("instances/$instance/#2. tactical - $version/day $h/arcs.csv", A)
 
     # Vehicles
     Vˢ = DataFrame(iv = Int64[], jv = Int64[], id = Int64[], q = Float64[], l = Float64[], s = Float64[], tf = Float64[], td = Float64[], tc = Float64[], tw = Float64[], r = Int64[], cd = Float64[], ct = Float64[], cf = Float64[])
@@ -195,12 +99,12 @@ function genopt(rng::AbstractRNG, instance::String, share::Float64, consolidatio
     s = strategic
     
     # Depot Nodes
-    Dᵈ = DataFrame(in = Int64[], jn = Int64[], x = Float64[], y = Float64[], q = Int64[], pl = Float64[], pu = Float64[], ts = Int64[], te = Int64[], co = Float64[], cf = Float64[])
+    Dᵈ = DataFrame(in = Int64[], jn = Int64[], x = Float64[], y = Float64[], q = Int64[], pl = Float64[], pu = Float64[], ts = Int64[], te = Int64[], co = Float64[], cf = Float64[], phi = Int64[])
     iᵈ = 0
     for d ∈ s.D
         if !LRP.isopt(d) continue end
         iᵈ += 1
-        push!(Dᵈ, (iᵈ, d.jⁿ, d.x, d.y, d.q, d.pˡ, d.pᵘ, d.tˢ, d.tᵉ, d.πᵒ, d.πᶠ))
+        push!(Dᵈ, (iᵈ, d.jⁿ, d.x, d.y, d.q, d.pˡ, d.pᵘ, d.tˢ, d.tᵉ, d.πᵒ, d.πᶠ, 1))
     end
     CSV.write("instances/$instance/#3. operational/day $h/depot_nodes.csv", Dᵈ)
     
@@ -217,8 +121,8 @@ function genopt(rng::AbstractRNG, instance::String, share::Float64, consolidatio
     nˢ = 0
     nᵈ = 0
     δʰ = δ
-    Z  = Dict(df[r,6] => Int64[] for r ∈ 1:n)
-    for r ∈ 1:n push!(Z[df[r,6]], df[r,1]) end
+    Z  = Dict(df[r,7] => Int64[] for r ∈ 1:n)
+    for r ∈ 1:n push!(Z[df[r,7]], df[r,1]) end
     for iᵗ ∈ keys(Z)
         zᶜ = Int64(round(length(Z[iᵗ]) * rand(rng, Uniform(0.8p, 1.2p)) / θ))
         zˢ = Int64(round((1 - δʰ) * zᶜ))
@@ -226,7 +130,7 @@ function genopt(rng::AbstractRNG, instance::String, share::Float64, consolidatio
         Iᶜ = sample(rng, Z[iᵗ], zᶜ, replace=false)
         Iˢ = sample(rng, Iᶜ, zˢ, replace=false)
         Iᵈ = filter(x -> x ∉ Iˢ, Iᶜ)
-        for iᵈ ∈ Iᵈ push!(Cᵈ, (df[iᵈ,1], df[iᵈ,2], df[iᵈ,3], θ, df[iᵈ,4], df[iᵈ,5], rand(rng, Uniform(tˢ, tˢ + (tᵉ - tˢ)/2)))) end
+        for iᵈ ∈ Iᵈ push!(Cᵈ, (df[iᵈ,1], df[iᵈ,2], df[iᵈ,3], θ, df[iᵈ,5], df[iᵈ,6], rand(rng, Uniform(tˢ, tˢ + (tᵉ - tˢ)/2)))) end
         nᶜ += zᶜ
         nˢ += zˢ
         nᵈ += zᵈ
@@ -236,100 +140,6 @@ function genopt(rng::AbstractRNG, instance::String, share::Float64, consolidatio
     for n ∈ 1:nᵈ Cᵈ[n,1] = n + nˢ + Δn end
     CSV.write("instances/$instance/#3. operational/day $h/customer_nodes.csv", Cᵈ)
     
-    # Arcs
-    df₁ = DataFrame(CSV.File("instances/$instance/#3. operational/day $h/depot_nodes.csv"))
-    df₂ = DataFrame(CSV.File("instances/$instance/#2. tactical - actual/day $h/customer_nodes.csv"))
-    df₃ = DataFrame(CSV.File("instances/$instance/#3. operational/day $h/customer_nodes.csv"))
-    A   = DataFrame(t = Int64[], h = Int64[], l = Float64[], φ = Float64[])
-    for i ∈ 1:nrow(df₁)
-        iⁿ = df₁[i,1]
-        x₁ = df₁[i,3]
-        y₁ = df₁[i,4] 
-        for j ∈ 1:nrow(df₁)
-            jⁿ = df₁[j,1]
-            x₂ = df₁[j,3]
-            y₂ = df₁[j,4]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 55/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-        for j ∈ 1:nrow(df₂)
-            jⁿ = df₂[j,1]
-            x₂ = df₂[j,2]
-            y₂ = df₂[j,3]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 55/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-        for j ∈ 1:nrow(df₃)
-            jⁿ = df₃[j,1]
-            x₂ = df₃[j,2]
-            y₂ = df₃[j,3]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 55/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-    end
-    for i ∈ 1:nrow(df₂)
-        iⁿ = df₂[i,1]
-        x₁ = df₂[i,2]
-        y₁ = df₂[i,3] 
-        for j ∈ 1:nrow(df₁)
-            jⁿ = df₁[j,1]
-            x₂ = df₁[j,3]
-            y₂ = df₁[j,4]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 55/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-        for j ∈ 1:nrow(df₂)
-            jⁿ = df₂[j,1]
-            x₂ = df₂[j,2]
-            y₂ = df₂[j,3]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 20/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-        for j ∈ 1:nrow(df₃)
-            jⁿ = df₃[j,1]
-            x₂ = df₃[j,2]
-            y₂ = df₃[j,3]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 20/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-    end
-    for i ∈ 1:nrow(df₃)
-        iⁿ = df₃[i,1]
-        x₁ = df₃[i,2]
-        y₁ = df₃[i,3] 
-        for j ∈ 1:nrow(df₁)
-            jⁿ = df₁[j,1]
-            x₂ = df₁[j,3]
-            y₂ = df₁[j,4]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 55/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-        for j ∈ 1:nrow(df₂)
-            jⁿ = df₂[j,1]
-            x₂ = df₂[j,2]
-            y₂ = df₂[j,3]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 20/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-        for j ∈ 1:nrow(df₃)
-            jⁿ = df₃[j,1]
-            x₂ = df₃[j,2]
-            y₂ = df₃[j,3]
-            l  = abs(x₂ - x₁) + abs(y₂ - y₁)
-            φ  = 20/60
-            push!(A, (iⁿ, jⁿ, l, φ))
-        end
-    end
-    CSV.write("instances/$instance/#3. operational/day $h/arcs.csv", A)
-
     # Vehicles
     Vᵈ = DataFrame(iv = Int64[], jv = Int64[], id = Int64[], q = Float64[], l = Float64[], s = Float64[], tf = Float64[], td = Float64[], tc = Float64[], tw = Float64[], r = Int64[], cd = Float64[], ct = Float64[], cf = Float64[])
     iᵈ = 0
