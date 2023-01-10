@@ -2,15 +2,15 @@ include("insertnode.jl")
 include("localsearch.jl")
 
 # Operational decision-making
-function optopr(rng::AbstractRNG, instance::String, day::Int64, tactical::LRP.Solution)
-    instance = "$instance/#3. operational/day $day"
-    dir      = "G:/My Drive/Academia/Research/Projects/2022. Last-Mile Logistics/Analysis/instances"
-    file     = joinpath(dir, "$instance/customer_nodes.csv")
-    csv      = CSV.File(file, types=[Int64, Float64, Float64, Float64, Float64, Float64, Float64])
-    df       = DataFrame(csv)
-    Iⁿ       = (df[1,1]:df[nrow(df),1])::UnitRange{Int64}
-    Tʳ       = Dict{Int64, Float64}(iⁿ => 0. for iⁿ ∈ Iⁿ)
-    C′       = OffsetVector{LRP.CustomerNode}(undef, Iⁿ)
+function optopr(rng::AbstractRNG, env::Dict, initsol::LRP.Solution)
+    dir = env["dir"] 
+    strategy = env["strategy"]
+    day = env["day"]
+    file = "$dir/$strategy/#3. operational/day $day/customer_nodes.csv"
+    df = DataFrame(CSV.File(file))
+    Iⁿ = (df[1,1]:df[nrow(df),1])::UnitRange{Int64}
+    Tʳ = Dict{Int64, Float64}(iⁿ => 0. for iⁿ ∈ Iⁿ)
+    C′ = OffsetVector{LRP.CustomerNode}(undef, Iⁿ)
     for k ∈ 1:nrow(df)
         iⁿ = df[k,1]::Int64
         x  = df[k,2]::Float64
@@ -28,8 +28,8 @@ function optopr(rng::AbstractRNG, instance::String, day::Int64, tactical::LRP.So
         Tʳ[iⁿ] = tʳ
     end
     # Step 1. Simulate daily operations for day-t
-    s = deepcopy(tactical)
-    N = length(s.D) + length(s.C)
+    s  = initsol
+    N  = length(s.D) + length(s.C)
     tˢ = Inf
     tᵉ = 0.
     for d ∈ s.D if d.tˢ < tˢ tˢ = d.tˢ end end
