@@ -1,15 +1,7 @@
 # Strategic decision-making
-function optstr(rng::AbstractRNG, instance::String)
-    # Step 1. Visualize instance
-    instance = "$instance/#1. strategic"
-    dir      = "G:/My Drive/Academia/Research/Projects/2022. Last-Mile Logistics/Analysis/instances"
-    display(visualize(instance; root=dir))
-
-    # Step 2. Build strategic solution
-    G  = build(instance; root=dir)
-    s  = initialsolution(rng, G, :cluster)
-
-    n  = 100
+function optstr(rng::AbstractRNG, env::Dict, initsol::LRP.Solution)
+    s  = initsol
+    n  = 200
     χ  = ALNSParameters(
         n    =   n ÷ 25                  ,
         k    =   250                     ,
@@ -58,8 +50,7 @@ function optstr(rng::AbstractRNG, instance::String)
         ρ    =   0.1
     )
     S = ALNS(rng, χ, s)
+    display(pltcnv(S; penalty=false))
     s = deepcopy(S[end])
-
-    # Step 3. Return solution
     return s
 end
